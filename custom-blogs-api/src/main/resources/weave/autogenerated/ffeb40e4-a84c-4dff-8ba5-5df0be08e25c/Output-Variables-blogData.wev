@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_ffeb40e4_a84c_4dff_8ba5_5df0be08e25c_Output_Variables_blogData = Any
+

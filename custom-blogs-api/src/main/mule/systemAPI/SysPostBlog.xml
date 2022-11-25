@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:compression="http://www.mulesoft.org/schema/mule/compression" xmlns:mongo="http://www.mulesoft.org/schema/mule/mongo" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/mongo http://www.mulesoft.org/schema/mule/mongo/current/mule-mongo.xsd
+http://www.mulesoft.org/schema/mule/compression http://www.mulesoft.org/schema/mule/compression/current/mule-compression.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="SysPostBlogFlow" doc:id="ffeb40e4-a84c-4dff-8ba5-5df0be08e25c" >
+		<logger level="INFO" doc:name="Logger" doc:id="05828b15-ccea-4f2f-91cc-40fbb25087d7" message="Started"/>
+		<ee:transform doc:name="Transform Message" doc:id="59b29934-6931-4518-9c01-383b9355a65f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="blogData" ><![CDATA[%dw 2.0
+import * from dw::core::Binaries
+output application/json
+---
+{
+	"id": uuid(),
+	"name": payload.parts.name.content,
+	"message": payload.parts.message.content,
+	"category": payload.parts.category.content,
+	"email": payload.parts.email.content,
+	"timestamp": now(),
+	"image": toBase64(payload.parts.image.content as Binary)
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<try doc:name="Try" doc:id="281eabae-8c0e-43b9-9821-8b4d16b78a1b" >
+			<mongo:collection-exists collectionName="${db.collectionName}" doc:name="Collection exists" doc:id="1f091c01-f942-4f84-bfb8-de46b10a478f" config-ref="MongoDB_Config"/>
+			<choice doc:name="Choice" doc:id="db0292e0-0c8e-4763-b6bb-7a039c340778" >
+				<when expression="#[payload==false]">
+					<mongo:create-collection doc:name="Create collection" doc:id="dcd7fb67-c7c5-4600-a378-11bf14859908" collectionName="${db.collectionName}" config-ref="MongoDB_Config"/>
+					<mongo:insert-document doc:name="Insert document" doc:id="89b38186-b974-4f81-8398-344d6c0c0d89" collectionName="${db.collectionName}" config-ref="MongoDB_Config">
+						<mongo:document ><![CDATA[#[vars.blogData]]]></mongo:document>
+					</mongo:insert-document>
+				</when>
+				<otherwise >
+					<mongo:insert-document doc:name="Insert document" doc:id="21662086-a3a9-49cc-a2ba-f966afbff078" collectionName="${db.collectionName}" config-ref="MongoDB_Config">
+						<mongo:document ><![CDATA[#[vars.blogData]]]></mongo:document>
+					</mongo:insert-document>
+				</otherwise>
+			</choice>
+		</try>
+	</flow>
+</mule>

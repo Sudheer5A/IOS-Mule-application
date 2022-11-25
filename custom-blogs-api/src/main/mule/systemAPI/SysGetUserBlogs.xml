@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:mongo="http://www.mulesoft.org/schema/mule/mongo"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/mongo http://www.mulesoft.org/schema/mule/mongo/current/mule-mongo.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="SysGetUserBlogsFlow" doc:id="e1a351e0-cd1b-424f-b2b7-335d3f81a01a" >
+		<logger level="INFO" doc:name="Logger" doc:id="10286112-f936-4150-9c88-537490afbe01" message="Started"/>
+		<set-variable value="#[attributes.queryParams.email]" doc:name="Set Variable" doc:id="fcf1a3b5-02b4-4178-ae15-206491010321" variableName="emailQuery"/>
+		<try doc:name="Try" doc:id="62598887-de5d-41df-8f6a-da3cc6b56f7a" >
+			<mongo:collection-exists doc:name="Collection exists" doc:id="12e4ed7f-48cb-4aed-bd6f-2bde70b657ee" collectionName="${db.collectionName}" config-ref="MongoDB_Config"/>
+			<choice doc:name="Choice" doc:id="6c0ea105-5da5-417a-a6fb-ad5b9c18370d" >
+				<when expression="#[payload==true]">
+					<mongo:find-documents doc:name="Find documents" doc:id="53bf9d9e-460b-488a-a00d-55c57d1d9789" fields="," collectionName="${db.collectionName}" config-ref="MongoDB_Config">
+						<mongo:query ><![CDATA[#[output application/json
+---
+{
+	"email": vars.emailQuery
+}]]]></mongo:query>
+					</mongo:find-documents>
+					<choice doc:name="Choice" doc:id="70486a76-05a4-45aa-acea-4dc13a5d1a64" >
+						<when expression="#[isEmpty(payload)]">
+							<ee:transform doc:name="Transform Message" doc:id="d70afdd5-8d02-4c31-a9b8-88cf18ed2cf4" >
+								<ee:message >
+									<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"res": false,
+	"message": "No documents founds"
+}]]></ee:set-payload>
+								</ee:message>
+							</ee:transform>
+							<logger level="INFO" doc:name="Logger" doc:id="7923bc65-f0da-49f9-972e-4119b9628185" message="No documents found"/>
+						</when>
+						<otherwise >
+							<ee:transform doc:name="Transform Message" doc:id="44593689-563a-49ce-8693-a70974910d5f" >
+								<ee:message >
+									<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+								</ee:message>
+							</ee:transform>
+						</otherwise>
+					</choice>
+				</when>
+				<otherwise >
+					<ee:transform doc:name="Transform Message" doc:id="910359e2-ccf0-47c8-8dee-df563293759b" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"res": false,
+	"message": "No collection found"
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<logger level="INFO" doc:name="Logger" doc:id="212af76f-f464-461a-9180-902f8f4fec4e" message="#[payload]"/>
+				</otherwise>
+			</choice>
+		</try>
+		<logger level="INFO" doc:name="Logger" doc:id="d7ae4ec2-741e-4b3e-b3d7-ead1391b88de" message="Completed"/>
+	</flow>
+</mule>

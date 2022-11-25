@@ -1,0 +1,51 @@
+#%RAML 1.0
+title: custom-blogs-api
+description: API to make CRUD operations
+
+/api/v1/blog/getblogs:
+  get:
+    description: Retrieve all the blogs from the database
+    responses:
+      200:
+        body:
+          application/json:
+            
+/api/v1/blog/getuserblogs:
+  get:
+    queryParameters:
+      "email":
+        type: string
+        description: Email of the logged in user
+    description: get a single blog corresponding to the user logged in
+    responses:
+      200:
+        body:
+          application/json:
+            
+/api/v1/blog/postblog:
+  post:
+    description: post a blog to the database
+    body:
+      multipart/form-data:
+        example:
+           [{
+                "id": "084ab45e-78dd-41d2-9295-c4c7ce21dd1f",
+                "name": "Make the world clean!",
+                "message": "The world is continually advancing in technology and other areas of life such as businesses.",
+                "timestamp": 2022-11-24T09:49:49.122+00:00,
+                "email": "example@someone.com",
+                "category": "Nature",
+                "image": ""
+              }]
+    responses:
+      200:
+
+        
+/api/v1/blog/removeblog:
+  post:
+    queryParameters:
+      "id":
+        type: string
+    description: remove a blog
+    responses:
+      200:
